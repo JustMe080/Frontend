@@ -1,0 +1,33 @@
+{
+    "manifest_version": 3,
+    "name": "TransLingo",
+    "version": "1.0",
+    "description": "A simple extension that will text that contain jargon simplified",
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"],
+        "css": ["content.css"]
+      }
+      
+    ]
+    ,
+    "permissions": ["contextMenus", "activeTab", "scripting", "tabs", "storage"],
+    "host_permissions": ["https://translingo-extension-sg.onrender.com/simplify-text"],
+    "background": {
+          "service_worker": "background.js"
+      },
+    "web_accessible_resources": [
+    {
+      "resources": ["TransLingoLogo.png","backvid3.mp4","TransLingoLogo2point1.png"],
+      "matches": ["<all_urls>"]
+      
+    }
+    ]
+    ,
+    "action": {
+      "default_icon": "TransLingoLogo.png",
+      "default_popup": "popup/popup.html",
+      "default_title": "TransLingo"
+    }
+  }
