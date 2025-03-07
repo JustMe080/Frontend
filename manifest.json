@@ -13,13 +13,13 @@
     ]
     ,
     "permissions": ["contextMenus", "activeTab", "scripting", "tabs", "storage"],
-    "host_permissions": ["https://translingo-extension-sg.onrender.com/simplify-text"],
+    "host_permissions": ["https://translingo-extension-sg.onrender.com/*"],
     "background": {
           "service_worker": "background.js"
       },
     "web_accessible_resources": [
     {
-      "resources": ["TransLingoLogo.png","backvid3.mp4","TransLingoLogo2point1.png"],
+      "resources": ["TransLingoLogo.png","background_Video2.mp4","TransLingoLogo2point1.png"],
       "matches": ["<all_urls>"]
       
     }

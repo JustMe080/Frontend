@@ -27,22 +27,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Message received in background script:", message);
 
   if (message.action === "simplifyText") {
-      const inputText = message.text;
+    const inputText = message.text;
+    let responseObj = {};
 
-      fetch("https://translingo-extension-sg.onrender.com/simplify-text", {
+    fetch("https://translingo-extension-sg.onrender.com/simplify-text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: inputText })
+    })
+      .then(res => res.json())
+      .then(data => {
+        responseObj.simplified = data[0]?.generated_text || "Unexpected response";
+        return fetch("https://translingo-extension-sg.onrender.com/term-detection", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: inputText })
+        });
       })
-      .then(response => response.json())
+      .then(res => res.json())
       .then(data => {
-          sendResponse({ result: data[0]?.generated_text || "Unexpected response" });
+        responseObj.terms = data[0]?.generated_text || "Unexpected response";
+        sendResponse(responseObj);
       })
-      .catch(error => {
-          sendResponse({ error: error.message });
-      });
+      .catch(err => sendResponse({ error: err.message }));
 
-      // ✅ **Return true to keep the message channel open until sendResponse is called**
-      return true;
+    return true;
+
+  
   }
 });

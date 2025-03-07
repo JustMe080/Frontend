@@ -26,7 +26,7 @@ anchorElement.style.display = 'none';
 
 const video = document.createElement('video');
 video.className = 'video-background';
-video.src = chrome.runtime.getURL('backvid3.mp4'); // Adjust path if using absolute or external URLs
+video.src = chrome.runtime.getURL('background_Video2.mp4');
 video.autoplay = true;
 video.loop = true;
 video.muted = true; // Ensure the video plays silently
@@ -86,11 +86,11 @@ const inputElement = document.createElement('textarea');
 inputElement.placeholder = 'Text containing computer science jargon';
 inputElement.className = 'input-textarea';
 
-const outputElement = document.createElement('textarea');
+const outputElement = document.createElement('div');
 outputElement.placeholder = 'Simplified text';
 outputElement.className = 'output-textarea';
 outputElement.style.display = 'none';
-outputElement.readOnly = true;
+outputElement.contentEditable = false;
 
 const translateButton = document.createElement('button');
 translateButton.textContent = 'Input Text First';
@@ -99,10 +99,10 @@ translateButton.disabled = true;
 
 function toggleTranslateButton() {
   translateButton.disabled = inputElement.value.trim() === '';
-  translateButton.style.backgroundColor = translateButton.disabled ? '#0f0f0f': '#f8f8f8' ;
+  translateButton.style.backgroundColor = translateButton.disabled ? '#0f0f0f': 'rgb(0,0,0,0)' ;
   translateButton.style.color = translateButton.disabled ? '#f8f8f8': '#5dd62c';
-  translateButton.textContent = 'Simplify';
-  translateButton.style.border = '1px solid #f8f8f8';
+  translateButton.textContent = translateButton.disabled ? 'Input text first' : 'Simplify';
+  translateButton.style.border = translateButton.disabled ? '1px solid #f8f8f8': '1px solid #5dd62c';
 }
 
 inputElement.addEventListener('input', toggleTranslateButton);
@@ -114,8 +114,14 @@ translateButton.addEventListener('click', async () => {
     container.style.top = '10px';
     container.style.transform = 'none'; // Reset transform
     container.style.flexDirection = 'row'; // Align items side by side
-    container.style.alignItems = 'center'; // Vertically center logo and text
+    container.style.alignItems = 'center';
+    container.style.justifyContent = 'center'; 
+    logo.style.width = '50px';
+    logo.style.height = '50px';
+    text.style.fontSize = '15px';
+    container.style.height = '70px';
     container.style.gap = '10px';
+    container.style.borderBottom = '1px solid #f8f8f8'
     translateButton.disabled = true;
     translateButton.textContent = 'Simplifying...';
     translateButton.style.backgroundColor = 'rgb(0,0,0,1)';
@@ -131,41 +137,44 @@ translateButton.addEventListener('click', async () => {
     outputElement.style.display = 'block';  
     outputElement.value = 'Simplifying...';
 
-    try {
-      chrome.runtime.sendMessage({ action: "simplifyText", text: inputValue }, (response) => {
-        if (response?.result) {
-            outputElement.value = response.result;
-        } else {
-            outputElement.value = "Error: " + (response?.error || "Unexpected response");
-        }
-      });    
+    function sendMessageAsync(message) {
+      return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(response);
+          }
+        });
+      });
+    }
     
-      // Parse the response
-      const result = await response.json();
-
-      // Display the result
-      if (result[0]?.generated_text) {
-        outputElement.value = result[0].generated_text;
+    try {
+      const response = await sendMessageAsync({ action: "simplifyText", text: inputValue });
+      if (response && response.simplified && response.terms) {
+        outputElement.innerHTML = `<b>Original Sentence</b><br> ${inputValue}<br><br><br><b>Simplified</b><br> ${response.simplified}<br><br><b>Terms</b><br> ${response.terms}`;
+        inputElement.value = '';
+        
       } else {
-        outputElement.value = "Unexpected response from the server.";
+        outputElement.value = "Error: " + (response?.error || "Unexpected response");
       }
     } catch (error) {
-      // Handle network or other errors
-      //termTextArea.value = "Error: " + error.message;
+      outputElement.value = "Error: " + error.message;
     } finally {
-      // Re-enable the button and reset its state
-      translateButton.disabled = false;
-      translateButton.textContent = 'Simplify';
-      translateButton.style.backgroundColor = 'rgb(0,0,0,0)'; // Reset to default
-      translateButton.style.color = '#f8f8f8';
+      translateButton.disabled = inputElement.value.trim() === '';
+      translateButton.style.backgroundColor = translateButton.disabled ? '#0f0f0f': 'rgb(0,0,0,0)' ;
+      translateButton.style.color = translateButton.disabled ? '#f8f8f8': '#5dd62c';
+      translateButton.textContent = translateButton.disabled ? 'Input text first' : 'Simplify';
+      translateButton.style.border = translateButton.disabled ? '1px solid #f8f8f8': '1px solid #5dd62c';
       translateButton.classList.remove('loading');
+      
     }
   }
 });
-
+layer1.appendChild(outputElement);
 layer1.appendChild(inputElement);
 layer1.appendChild(translateButton);
-layer1.appendChild(outputElement);
+
 document.body.appendChild(anchorElement);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
